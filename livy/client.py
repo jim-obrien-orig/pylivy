@@ -1,4 +1,5 @@
 import logging
+import json
 from typing import Any, Union, Dict, List, Tuple, Optional
 
 import requests
@@ -55,14 +56,14 @@ class JsonClient:
     def close(self) -> None:
         self.session.close()
 
-    def get(self, endpoint: str = "", params: dict = None) -> dict:
-        return self._request("GET", endpoint)
+    def get(self, endpoint: str = "", params: dict = None, logger: Any = None) -> dict:
+        return self._request("GET", endpoint, logger=logger)
 
-    def post(self, endpoint: str, data: dict = None) -> dict:
-        return self._request("POST", endpoint, data)
+    def post(self, endpoint: str, data: dict = None, logger: Any = None) -> dict:
+        return self._request("POST", endpoint, data, logger=logger)
 
-    def delete(self, endpoint: str = "") -> dict:
-        return self._request("DELETE", endpoint)
+    def delete(self, endpoint: str = "", logger: Any = None) -> dict:
+        return self._request("DELETE", endpoint, logger=logger)
 
     def _request(
         self,
@@ -70,10 +71,19 @@ class JsonClient:
         endpoint: str,
         data: dict = None,
         params: dict = None,
+        logger: Any = None
     ) -> dict:
         url = self.url.rstrip("/") + endpoint
+        if logger:
+            logger.debug(f"Making request[{method} to url: {url}")
+            logger.debug(data)
         response = self.session.request(method, url, json=data, params=params)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            errjson = json.dumps(response.json(), indent=4, sort_keys=True)
+            logger.error(f"Error - response json: {errjson}")
+            raise err
         return response.json()
 
 
@@ -134,6 +144,7 @@ class LivyClient:
         queue: str = None,
         name: str = None,
         spark_conf: Dict[str, Any] = None,
+        logger: Any = None
     ) -> Session:
         """Create a new session in Livy.
 
@@ -173,6 +184,7 @@ class LivyClient:
         :param queue: The name of the YARN queue to which submitted.
         :param name: The name of this session.
         :param spark_conf: Spark configuration properties.
+        :param logger: Passed in logger
         """
         if self.legacy_server():
             valid_kinds = VALID_LEGACY_SESSION_KINDS
@@ -213,7 +225,7 @@ class LivyClient:
         if spark_conf is not None:
             body["conf"] = spark_conf
 
-        data = self._client.post("/sessions", data=body)
+        data = self._client.post("/sessions", data=body, logger=logger)
         return Session.from_json(data)
 
     def get_session(self, session_id: int) -> Optional[Session]:
@@ -299,6 +311,7 @@ class LivyClient:
         queue: str = None,
         name: str = None,
         spark_conf: Dict[str, Any] = None,
+        logger: Any = None
     ) -> Batch:
         """Create a new batch in Livy.
 
@@ -340,6 +353,7 @@ class LivyClient:
         :param queue: The name of the YARN queue to which submitted.
         :param name: The name of this session.
         :param spark_conf: Spark configuration properties.
+        :param logger: Logger
         """
 
         body: Dict[str, Any] = {"file": file}
@@ -374,7 +388,7 @@ class LivyClient:
         if spark_conf is not None:
             body["conf"] = spark_conf
 
-        data = self._client.post("/batches", data=body)
+        data = self._client.post("/batches", data=body, logger=logger)
         return Batch.from_json(data)
 
     def delete_batch(self, batch_id: int) -> None:

@@ -108,6 +108,7 @@ class LivySession:
         to ``True``.
     :param check: Whether to raise an exception when a statement in the remote
         session fails. Defaults to ``True``.
+    :param logger: passed in logger
     """
 
     def __init__(
@@ -131,6 +132,7 @@ class LivySession:
         spark_conf: Dict[str, Any] = None,
         echo: bool = True,
         check: bool = True,
+        logger: Any = None
     ) -> None:
         self.client = LivyClient(url, auth, verify=verify)
         self.kind = kind
@@ -150,6 +152,7 @@ class LivySession:
         self.echo = echo
         self.check = check
         self.session_id: Optional[int] = None
+        self.logger = logger
 
     def __enter__(self) -> "LivySession":
         self.start()
@@ -176,6 +179,7 @@ class LivySession:
             self.queue,
             self.name,
             self.spark_conf,
+            self.logger
         )
         self.session_id = session.session_id
 

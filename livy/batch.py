@@ -70,6 +70,7 @@ class LivyBatch:
         queue: str = None,
         name: str = None,
         spark_conf: Dict[str, Any] = None,
+        logger: Any = None
     ) -> None:
         self.client = LivyClient(url, auth)
         self.file = file
@@ -89,6 +90,7 @@ class LivyBatch:
         self.name = name
         self.spark_conf = spark_conf
         self.batch_id: Optional[int] = None
+        self.logger = logger
 
     def start(self) -> None:
         """Create the batch session.
