@@ -48,6 +48,7 @@ class LivyBatch:
     :param queue: The name of the YARN queue to which submitted.
     :param name: The name of this session.
     :param spark_conf: Spark configuration properties.
+    :param logger: Passed in logger
     """
 
     def __init__(
@@ -114,6 +115,7 @@ class LivyBatch:
             self.queue,
             self.name,
             self.spark_conf,
+            self.logger
         )
         self.batch_id = batch.batch_id
 
