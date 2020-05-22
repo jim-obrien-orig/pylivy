@@ -77,12 +77,16 @@ class JsonClient:
         if logger:
             logger.debug(f"Making request[{method} to url: {url}")
             logger.debug(data)
+        else:
+            print(data)
         response = self.session.request(method, url, json=data, params=params)
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             errjson = json.dumps(response.json(), indent=4, sort_keys=True)
-            logger.error(f"Error - response json: {errjson}")
+            print(errjson)
+            if logger:
+                logger.error(f"Error - response json: {errjson}")
             raise err
         return response.json()
 
